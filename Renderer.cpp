@@ -189,10 +189,11 @@ void Renderer::render(const Board& board,
                           "   \xf0\x9f\xaa\x99 " + std::to_string(res.getGold()) +
                           "   \xf0\x9f\xa7\xaa " + std::to_string(res.getElixir()) +
                           "   \xf0\x9f\x91\xb9 " + std::to_string(board.getRaiderCount()) +
+                          "   \xf0\x9f\x9b\xa1 " + std::to_string(board.getTroopCount()) +
                           "   \xe2\x98\xa0 " + std::to_string(kills)));
     panel.push_back(pLine(" \xf0\x9f\x8f\x9b TownHall " + std::to_string(thHp) + "/" + std::to_string(thMax) +
                           "   " + hpBar(thHp, thMax, 18)));
-    panel.push_back(pLine(std::string(" Raid: ") + raidTxt + "   [Arrows] Move  [W/G/E] Build  [C] Collect  [Q] Quit"));
+    panel.push_back(pLine(std::string(" Raid: ") + raidTxt + "   [Arrows] Move  [W/G/E/K] Build  [A/B] Train  [C] Collect  [Q] Quit"));
     {
         std::string msgLine = " Msg: " + msg;
         if((int)msgLine.size()>mapInnerW) msgLine.resize(mapInnerW);

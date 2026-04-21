@@ -11,7 +11,10 @@ Board::Board(){ std::memset(grid_,0,sizeof(grid_)); }
 
 void Board::init(){
     std::memset(grid_,0,sizeof(grid_));
-    buildings_.clear(); raiders_.clear();
+    buildings_.clear();
+    raiders_.clear();
+    bombermen_.clear();
+    troops_.clear();
     wallCount_=goldMineCount_=elixirCount_=0;
 
     auto th=std::make_unique<TownHall>();
@@ -128,6 +131,30 @@ void Board::update(float dt){
     for(auto& b:buildings_) if(b&&b->isAlive()) b->update(dt);
     auto alive=getAliveBuildings();
     for(auto& r:raiders_)   if(r&&r->isAlive()) r->update(dt,alive);
+
+    // ── Mise à jour des Bombermen ──
+    std::vector<Building*> bldgPtrs;
+    for (auto& b : buildings_) if (b && b->isAlive()) bldgPtrs.push_back(b.get());
+    for (auto& b : bombermen_) if (b && b->isAlive()) b->update(dt, bldgPtrs, WIDTH, HEIGHT);
+
+    // ── Dispatch stratégique : max 2 troupes par ennemi ──
+    auto aliveEnemies = getAliveEnemies();
+    for (Enemy* enemy : aliveEnemies) {
+        int assigned = 0;
+        for (auto& t : troops_)
+            if (t && t->getState() == TroopState::ENGAGING && t->getTarget() == enemy)
+                assigned++;
+        for (auto& t : troops_) {
+            if (assigned >= 2) break;
+            if (t && t->getState() == TroopState::IDLE) {
+                t->setTarget(enemy);
+                assigned++;
+            }
+        }
+    }
+
+    // ── Mise à jour des troupes ──
+    for (auto& t : troops_) if (t && t->isAlive()) t->update(dt, aliveEnemies, WIDTH, HEIGHT);
 }
 
 void Board::fillBuffer(std::string buf[HEIGHT][WIDTH]) const {
@@ -175,8 +202,91 @@ void Board::fillBuffer(std::string buf[HEIGHT][WIDTH]) const {
         if(rp.x>=0&&rp.x<WIDTH&&rp.y>=0&&rp.y<HEIGHT)
             buf[rp.y][rp.x]=r->getRepr();
     }
+
+    // Troupes
+    for(const auto& t:troops_){
+        if(!t||!t->isAlive()) continue;
+        Position tp=t->getPosition();
+        if(tp.x>=0&&tp.x<WIDTH&&tp.y>=0&&tp.y<HEIGHT)
+            buf[tp.y][tp.x]=t->getRepr();
+    }
+
+    // Bombermen
+    for(const auto& b:bombermen_){
+        if(!b||!b->isAlive()) continue;
+        Position bp=b->getPosition();
+        if(bp.x>=0&&bp.x<WIDTH&&bp.y>=0&&bp.y<HEIGHT)
+            buf[bp.y][bp.x]=b->getRepr();
+    }
+
     // Joueur (par dessus tout)
     Position pp=player_->getPosition();
     if(pp.x>=0&&pp.x<WIDTH&&pp.y>=0&&pp.y<HEIGHT)
         buf[pp.y][pp.x]=player_->getRepr();
+}
+// ── spawnBomberman ──
+void Board::spawnBomberman() {
+    int side = std::rand() % 4;
+    Position spawn;
+    switch(side) {
+        case 0: spawn = {std::rand() % WIDTH, 0};           break;
+        case 1: spawn = {std::rand() % WIDTH, HEIGHT - 1};  break;
+        case 2: spawn = {0, std::rand() % HEIGHT};          break;
+        default: spawn = {WIDTH - 1, std::rand() % HEIGHT}; break;
+    }
+    bombermen_.push_back(std::make_unique<Bomberman>(spawn));
+}
+
+// ── removeDeadBombermen ──
+void Board::removeDeadBombermen(int& kills) {
+    auto it = std::remove_if(bombermen_.begin(), bombermen_.end(),
+        [&](const auto& b) {
+            if (!b->isAlive()) { kills++; return true; }
+            return false;
+        });
+    bombermen_.erase(it, bombermen_.end());
+}
+
+// ── addTroop ──
+void Board::addTroop(std::unique_ptr<Troop> t) {
+    troops_.push_back(std::move(t));
+}
+
+// ── removeDeadTroops ──
+void Board::removeDeadTroops() {
+    troops_.erase(std::remove_if(troops_.begin(), troops_.end(),
+        [](const auto& t) { return !t->isAlive(); }), troops_.end());
+}
+
+// ── getTroopCount ──
+int Board::getTroopCount() const { return (int)troops_.size(); }
+
+// ── getBarrackCount ──
+int Board::getBarrackCount() const {
+    int count = 0;
+    for (auto& b : buildings_)
+        if (dynamic_cast<Barrack*>(b.get())) count++;
+    return count;
+}
+
+// ── isPlayerOnBarrack ──
+bool Board::isPlayerOnBarrack() const {
+    for (auto& b : buildings_)
+        if (dynamic_cast<Barrack*>(b.get()) && b->collidesWith(player_->getPosition()))
+            return true;
+    return false;
+}
+
+// ── getTownHallCenter ──
+Position Board::getTownHallCenter() const {
+    TownHall* th = getTownHall();
+    return th ? th->getPosition() : Position{WIDTH/2, HEIGHT/2};
+}
+
+// ── getAliveEnemies ──
+std::vector<Enemy*> Board::getAliveEnemies() const {
+    std::vector<Enemy*> result;
+    for (auto& r : raiders_)    if (r && r->isAlive()) result.push_back(r.get());
+    for (auto& b : bombermen_)  if (b && b->isAlive()) result.push_back(b.get());
+    return result;
 }

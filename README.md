@@ -1,28 +1,38 @@
-==================================================
-  VILLAGE UNDER ATTACK - C++ OOP Console Game
-==================================================
+#  Village Under Attack
 
-LANCEMENT
----------
-  Windows : Double-cliquer sur LANCER.bat
-            OU lancer village.exe depuis Windows Terminal
 
-  Linux/Mac : make && ./village
+> A real-time strategy console game developed in **C++17** with object-oriented architecture.
 
-CONTROLES
----------
-  Fleches    : Deplacer le joueur
-  W          : Construire un Mur         (10 or)
-  G          : Construire une Mine d'or  (100 elixir)
-  E          : Construire un Collecteur  (100 or)
-  C          : Collecter les ressources  (se placer dessus)
-  ESPACE     : Autoriser le debut des raids
-  Q          : Quitter
 
-CONSEIL
--------
-  1. Construis des murs autour du TownHall
-  2. Place des mines/collecteurs pour generer des ressources
-  3. Collecte les ressources en appuyant C pres des batiments
-  4. Appuie sur ESPACE quand tu es pret pour le premier raid !
-==================================================
+**Village Under Attack** is a mini-project developed for the **Object-Oriented Programming course (C++)** at **ENIT** (École Nationale d'Ingénieurs de Tunis).
+
+Defend your village against waves of raiders! Build walls, manage resources (Gold 💰 & Elixir 🧪), and survive as long as possible. If your **TownHall** is destroyed, it's **GAME OVER**!
+
+##  Getting Started
+
+### Prerequisites
+
+- C++17 compatible compiler (g++, clang++, or MSVC)
+- Make (for Linux/Mac)
+
+### Installation
+
+#### 🔷 Windows
+```bash
+village.exe
+
+#### 🔷 Linux/Mac
+make && ./village
+
+
+```
+##  Gameplay
+
+W	Build Wall	10 
+G	Build Gold Mine	100 
+E	Build Elixir Collector	100 
+C	Collect resources	Free
+Space	Start enemy raids	-
+Q	Quit game
+##  Game Mechanics
+

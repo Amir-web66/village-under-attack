@@ -2,6 +2,9 @@
 #include "Buildings/Wall.h"
 #include "Buildings/GoldMine.h"
 #include "Buildings/ElixirCollector.h"
+#include "Buildings/Barrack.h"
+#include "Entities/Troops/Archer.h"
+#include "Entities/Troops/Barbarian.h"
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
@@ -188,6 +191,40 @@ void GameEngine::processInput(int key){
             board_.tryCollect(lastMsg_);
             break;
 
+        case 'k': case 'K':
+    if (board_.getBarrackCount() >= 1) { lastMsg_ = "Maximum 1 caserne !"; break; }
+    if (!res.canAfford(Barrack::COST_GOLD, 0)) { lastMsg_ = "Pas assez d'or ! (100 req.)"; break; }
+    if (board_.addBuilding(std::make_unique<Barrack>(), p.getPosition())) {
+        res.spend(Barrack::COST_GOLD, 0);
+        lastMsg_ = "Caserne construite ! (-100 or) | [A]=Archer(50🧪) [B]=Barbarian(20🧪)";
+    } else { lastMsg_ = "Emplacement occupe !"; }
+    break;
+
+case 'a': case 'A':
+    if (!board_.isPlayerOnBarrack()) { lastMsg_ = "Tu dois etre sur la Caserne !"; break; }
+    if (!res.canAfford(0, Archer::COST_ELIXIR)) { lastMsg_ = "Pas assez d'elixir ! (50 req.)"; break; }
+    {
+        Position spawnPos = board_.getTownHallCenter();
+        auto archer = std::make_unique<Archer>(spawnPos);
+        archer->setIdlePos(spawnPos);
+        board_.addTroop(std::move(archer));
+        res.spend(0, Archer::COST_ELIXIR);
+        lastMsg_ = "Archer entraine ! (-50 elixir) Il defend le centre.";
+    }
+    break;
+
+case 'b': case 'B':
+    if (!board_.isPlayerOnBarrack()) { lastMsg_ = "Tu dois etre sur la Caserne !"; break; }
+    if (!res.canAfford(0, Barbarian::COST_ELIXIR)) { lastMsg_ = "Pas assez d'elixir ! (20 req.)"; break; }
+    {
+        Position spawnPos = board_.getTownHallCenter();
+        auto barb = std::make_unique<Barbarian>(spawnPos);
+        barb->setIdlePos(spawnPos);
+        board_.addTroop(std::move(barb));
+        res.spend(0, Barbarian::COST_ELIXIR);
+        lastMsg_ = "Barbarian entraine ! (-20 elixir) Il defend le centre.";
+    }
+    break;
         default: break;
     }
 }
@@ -200,6 +237,13 @@ void GameEngine::update(float dt){
     board_.removeDeadRaiders(newKills);
     kills_  += newKills;
     score_  += newKills*15;
+
+    int bombKills = 0;
+    board_.removeDeadBombermen(bombKills);
+    kills_ += bombKills;
+    score_ += bombKills*20;
+
+    board_.removeDeadTroops();
     score_  += (int)(dt*2);  // points passifs
 
     TownHall* th=board_.getTownHall();
@@ -212,9 +256,12 @@ void GameEngine::update(float dt){
         wave_++;
         int count=1+wave_/2;
         for(int i=0;i<count;i++) board_.spawnRaider(wave_);
+        if(wave_>=4) board_.spawnBomberman();
         raidInterval_ = std::max(4.f, 10.f - wave_*0.4f);
         raidCD_       = raidInterval_;
-        lastMsg_ = ">>> VAGUE " + std::to_string(wave_) + " ! " + std::to_string(count) + " raider(s) spawne(s) <<<";
+        lastMsg_ = ">>> VAGUE " + std::to_string(wave_)
+                 + " ! " + std::to_string(count) + " raider(s)"
+                 + (wave_ >= 4 ? " + 1 Bomberman" : "") + " <<<";
     }
 }
 

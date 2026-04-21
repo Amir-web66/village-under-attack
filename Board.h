@@ -6,9 +6,15 @@
 #include "Buildings/ResourceGenerator.h"
 #include "Entities/Player.h"
 #include "Entities/Enemies/Raider.h"
+#include "Entities/Troops/Troop.h"
+#include "Entities/Troops/Archer.h"
+#include "Entities/Troops/Barbarian.h"
+#include "Entities/Enemies/Bomberman.h"
+#include "Buildings/Barrack.h"
 #include <vector>
 #include <memory>
 #include <string>
+
 
 class Board {
 public:
@@ -20,6 +26,8 @@ private:
     std::vector<std::unique_ptr<Building>> buildings_;
     std::unique_ptr<Player>               player_;
     std::vector<std::unique_ptr<Raider>>  raiders_;
+    std::vector<std::unique_ptr<Bomberman>> bombermen_;
+    std::vector<std::unique_ptr<Troop>>     troops_;
     TownHall* townHall_ = nullptr;
     int wallCount_=0, goldMineCount_=0, elixirCount_=0;
 
@@ -45,7 +53,15 @@ public:
     int getWallCount()     const { return wallCount_;     }
     int getGoldMineCount() const { return goldMineCount_; }
     int getElixirCount()   const { return elixirCount_;   }
-
+    void spawnBomberman();
+    void removeDeadBombermen(int& kills);
+    void addTroop(std::unique_ptr<Troop> t);
+    void removeDeadTroops();
+    int  getTroopCount()   const;
+    int  getBarrackCount() const;
+    bool isPlayerOnBarrack() const;
+    Position getTownHallCenter() const;
+    std::vector<Enemy*> getAliveEnemies() const;
     // Rendu : remplit buf (HEIGHT lignes de WIDTH cellules)
     // Chaque cellule est une chaine : emoji (2 cols) ou "  " (2 espaces)
     void fillBuffer(std::string buf[HEIGHT][WIDTH]) const;
